@@ -1,0 +1,249 @@
+# -*- coding: utf-8 -*-
+import math
+import tkinter
+
+#ファイルのパス（自分のlrcファイルのパス入れてくれ～）--------------------------------------
+f_kouho=[]
+f_kouho.append("D:/曲データ/daydream cafe/daydream cafe/Daydream cafe.lrc")
+f_kouho.append("D:\曲データ\GO!GO!MANIAC\GO!GO!MANIAC/GO!GO!MANIAC.lrc")
+f_kouho.append("D:\曲データ\初音ミクの消失\初音ミクの消失/初音ミクの消失.lrc")
+f_kouho.append("D:\曲データ\サイバーサンダーサイダー\サイバーサンダーサイダー/サイバーサンダーサイダー.lrc")
+f_kouho.append("D:/曲データ/エンヴィキャットウォーク/エンヴィキャットウォーク/エンヴィキャットウォーク .lrc")
+f_kouho.append("D:\曲データ\ブリキノダンス\ブリキノダンス/ブリキノダンス.lrc")
+f_kouho.append("D:\曲データ\どっきゅんハート/どっきゅんハート.lrc")
+f_kouho.append("D:\曲データ\回レ！雪月花\回レ！雪月花/回レ!雪月花.lrc")
+f_kouho.append("D:\曲データ\data\時間調整用？\TOSHE[2-24]/TOSHE.lrc")
+f_kouho.append("D:\曲データ\data\時間調整用？\ＳＡＤＡＭＥ[2-15]/ＳＡＤＡＭＥ.lrc")
+f_kouho.append("D:\曲データ\data\旧\SAVIOR OF SONG\SAVIOR OF SONG/SAVIOR OF SONG.lrc")
+folder=f_kouho[5] 
+
+#--------------------------------------------------------------------------------------
+
+
+#lrcファイル読み込み-------------------------------------------------------------------
+num_lines = sum(1 for line in open(folder))
+left_count=0
+right_count=0
+kuuhaku=0
+kigou=["「","」","！","？","/","、","。","～","?","!","♪","☆"," ","　","%","％","・","…","‥"]
+
+
+kashi_line=[]
+start_time=[]
+end_time=[]
+
+with open(folder,"r") as f:
+    for j in range(num_lines-1):
+        s=f.readline()
+        
+        if s=="\n":
+            kuuhaku+=1
+        else:
+            ss=""
+            time=""
+            for i in range(len(s)):
+                if s[i]=="[":
+                    left_count+=1
+                elif s[i]=="]":
+                    right_count+=1
+                else:
+                    if left_count==right_count and s[i] not in kigou and s[i]!="\n":
+                        ss+=s[i]
+                    elif left_count>right_count:
+                        time+=s[i]
+                    
+            kashi_line.append(ss)
+            start_time.append(time[0:8])
+            end_time.append(time[len(time)-8:len(time)])
+
+num_lines-=kuuhaku
+#-----------------------------------------------------------------------------------------
+
+#時間計算---------------------------------------------------------------------------------
+s_time=[]
+e_time=[]
+
+l=[0,1,3,4,6,7]
+t_f=[600,60,10,1,0.1,0.01]
+for j in range(num_lines-1):
+    sss=0
+    eee=0
+    for k in range(len(l)):
+        sss+=int(start_time[j][l[k]])*t_f[k]
+        eee+=int(end_time[j][l[k]])*t_f[k]
+    s_time.append(round(sss,3))
+    e_time.append(round(eee,3))
+
+s_time.append(s_time[num_lines-2]+20)
+
+#-----------------------------------------------------------------------------------------
+
+
+#補正文字数測定---------------------------------------------------------------------------
+#https://qiita.com/okkn/items/3aef4458ed2269a59d63
+sum_kashi=0
+alphabet=[chr(i) for i in range(97, 97+26)]
+ALPHABET=[chr(i) for i in range(65, 65+26)]
+alphabet2=[chr(i) for i in range(65345, 65371)]
+ALPHABET2=[chr(i) for i in range(65313, 65339)]
+hiragana=[chr(i) for i in range(12353, 12436)]
+katakana=[chr(i) for i in range(12449, 12532+1)]
+hankaku_kana=[chr(i) for i in range(65393, 65393+47)]
+katakana.append("ー")
+suuji=[chr(i) for i in range(48, 58)]
+suuji2=[chr(i) for i in range(65296, 65306)]
+
+state=0 #１：ひらがな　２：カタカナ　３：英語　４：漢字
+state_factor=[4, 3, 1] #日本語⇔英語, カタカナ⇔漢字, ひらがな⇔カタカナ
+#state_factor=[0,0,0]
+type_word_rev=[]
+for i in range(num_lines-1):
+    kashi_hosei=0
+    kanji_chain=3
+    for j in range(len(kashi_line[i])):
+    
+        if str(kashi_line[i])[j] in hiragana:
+            kanji_chain=3
+            kashi_hosei+=1
+            if state==3:
+                kashi_hosei+=state_factor[0]
+            elif state==2:
+                kashi_hosei+=state_factor[2]            
+            state=1
+            
+        elif str(kashi_line[i])[j] in katakana or str(kashi_line[i])[j] in hankaku_kana:
+            kanji_chain=3
+            kashi_hosei+=1.2
+            if state==3:
+                kashi_hosei+=state_factor[0]
+            elif state==4:
+                kashi_hosei+=state_factor[1]                     
+            state=2
+            
+        elif str(kashi_line[i])[j] in alphabet or str(kashi_line[i])[j] in ALPHABET or str(kashi_line[i])[j] in alphabet2 or str(kashi_line[i])[j] in ALPHABET2:
+            kanji_chain=3
+            kashi_hosei+=0.9
+            if state!=3:
+                kashi_hosei+=state_factor[2]     
+            state=3
+            
+        elif str(kashi_line[i])[j] in suuji or str(kashi_line[i])[j] in suuji2:
+            kanji_chain=3
+            kashi_hosei+=1.5
+            
+        else:
+            kashi_hosei+=3+kanji_chain-3 #漢字（登録できてない記号も含まれちゃうけど…）
+            kanji_chain=kanji_chain**1.1
+            if state==3:
+                kashi_hosei+=state_factor[0]
+            elif state==2:
+                kashi_hosei+=state_factor[1]              
+            state=4
+            
+
+    sum_kashi+=kashi_hosei
+    type_word_rev.append(kashi_hosei)
+    print(kashi_line[i])    
+    print(kashi_hosei,len(kashi_line[i]))
+
+#-----------------------------------------------------------------------------------------
+
+
+#点数シミュレーション---------------------------------------------------------------------
+
+def typing_simulation(type_speed):
+
+    stack=0
+    time_factor=1.08 #加速係数
+    stack_rev=[0,0,0]
+
+    for i in range(0,num_lines-1):
+        task_word=type_word_rev[i]
+
+        task_time=s_time[i+1]-s_time[i]
+        type_word=(task_time**time_factor)*type_speed
+        
+        if stack_rev[0]>0:
+            type_word, stack_rev[0]=max(0, type_word-stack_rev[0]), max(0, stack_rev[0]-type_word)
+            if stack_rev[0]>0:
+                stack+=stack_rev[0]
+
+        if stack_rev[1]>0:
+            type_word, stack_rev[1]=max(0, type_word-stack_rev[1]), max(0, stack_rev[1]-type_word)
+            if stack_rev[1]>0:
+                stack_rev[0]=stack_rev[1]  
+                      
+        stack_rev[2]=max(0, task_word-type_word)
+        if stack_rev[2]>0:
+            stack_rev[1]=stack_rev[2]           
+
+    return(round(1000-(1000*stack/sum_kashi)))
+
+
+#-----------------------------------------------------------------------------------------
+
+
+#各プレイヤー点数処理---------------------------------------------------------------------
+
+yarikomi_factor=2 #0~10
+
+shiro_speed=230/60
+yojo_speed=(260+yarikomi_factor*15)/60
+yuuki_speed=315/60
+point_shiro=typing_simulation(shiro_speed)
+point_yojo=typing_simulation(yojo_speed)
+point_yuuki=typing_simulation(yuuki_speed)
+
+print(sum_kashi,"\n")
+
+kyoku=str(folder.split("/")[-1])
+kyoku_rev=kyoku.replace(".lrc","")
+print(kyoku_rev)
+
+namae=[]
+namae.append(["セレナーデ☆游騎",point_yuuki])
+namae.append(["よーじょ",point_yojo])
+namae.append(["しろ",point_shiro])
+
+namae.sort(key=lambda x:x[1])
+
+rank=["1","2","3"]
+
+if namae[2][1]==namae[1][1]:
+    rank[1]=rank[0]
+if namae[1][1]==namae[0][1]:
+    rank[2]=rank[1]
+
+print(namae)
+
+#-----------------------------------------------------------------------------------------
+
+
+#ウィンドウ表示---------------------------------------------------------------------------
+
+# ウィンドウ作成
+root = tkinter.Tk()
+root.title("ニコ生タイピング点数シミュレーション")
+root.minsize(640, 480)
+root.option_add("*font", ["MS Pゴシック", 14])
+
+# 画像表示
+pimg = tkinter.PhotoImage(file="waku.png")
+canvas = tkinter.Canvas(bg="black", width=640, height=480)
+canvas.place(x=0, y=0)
+canvas.create_image(320, 240, image=pimg)
+
+# テキスト表示
+yuuki_ = tkinter.Label(text=rank[0]+"位 "+str(namae[2][1])+"点 "+namae[2][0], fg="white", bg="dimgrey")
+yuuki_.place(x=10, y=255)
+youjo_ = tkinter.Label(text=rank[1]+"位 "+str(namae[1][1])+"点 "+namae[1][0], fg="white", bg="dimgrey")
+youjo_.place(x=10, y=285)
+shiro_ = tkinter.Label(text=rank[2]+"位 "+str(namae[0][1])+"点 "+namae[0][0], fg="white", bg="dimgrey")
+shiro_.place(x=10, y=315)
+kyoku_ = tkinter.Label(text=kyoku_rev, fg="dimgrey", bg="white")
+kyoku_.place(x=10, y=20)
+
+root.mainloop()
+
+#-----------------------------------------------------------------------------------------
+
