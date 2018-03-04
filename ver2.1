@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import math
-import tkinter
+import tkinter, tkinter.filedialog, tkinter.messagebox
+import os
 
 #各パラメータ-------------------------------------------------------------------------
 
 #プレイヤーと打鍵速度系　7人までなら増やせます
-yarikomi_factor=0 #0~10 よーじょさんのやり込み度
+yarikomi_factor=2 #0~10 よーじょさんのやり込み度
 player=[]
 player.append(["しろ", 3.9]) #ひらがな/秒のイメージ
 player.append(["よーじょ", 4.3+yarikomi_factor*0.25])
@@ -23,8 +24,20 @@ time_factor=1.08 #加速係数
 
 #--------------------------------------------------------------------------------------
 
+# ウィンドウ作成、ファイル選択
+root = tkinter.Tk()
+root.title("ニコ生タイピング点数シミュレーション")
+root.minsize(640, 480)
+root.option_add("*font", ["MS Pゴシック", 14])
+
+fTyp = [("","*.lrc")]
+iDir = os.path.abspath(os.path.dirname(__file__))
+
+folder = tkinter.filedialog.askopenfilename(filetypes = fTyp,initialdir = iDir)
+
 
 #ファイルのパス-----------------------------------------------------------------------
+"""
 f_kouho=[]
 f_kouho.append("D:/曲データ/daydream cafe/daydream cafe/Daydream cafe.lrc")
 f_kouho.append("D:\曲データ\GO!GO!MANIAC\GO!GO!MANIAC/GO!GO!MANIAC.lrc")
@@ -47,7 +60,7 @@ f_kouho.append("D:\曲データ\data\きつめ曲\うたうたいのうた[4-59]
 f_kouho.append("D:\曲データ\data\きつめ曲\うたうたいのうた[4-59]7/うたうたいのうた.lrc")
 f_kouho.append("D:\曲データ\data\きつめ曲\うたうたいのうた[4-59]7/うたうたいのうた.lrc")
 folder=f_kouho[9] 
-
+"""
 #--------------------------------------------------------------------------------------
 
 
@@ -85,7 +98,6 @@ with open(folder,"r") as f:
                     
             kashi_line.append(ss)
             start_time.append(time[0:8])
-            end_time.append(time[len(time)-8:len(time)])
 num_lines-=kuuhaku
 
 #-----------------------------------------------------------------------------------------
@@ -234,12 +246,6 @@ print(namae)
 
 
 #ウィンドウ表示---------------------------------------------------------------------------
-
-# ウィンドウ作成
-root = tkinter.Tk()
-root.title("ニコ生タイピング点数シミュレーション")
-root.minsize(640, 480)
-root.option_add("*font", ["MS Pゴシック", 14])
 
 # 画像表示
 pimg = tkinter.PhotoImage(file="waku.png")
