@@ -65,7 +65,7 @@ folder=f_kouho[9]
 
 
 #lrcファイル読み込み-------------------------------------------------------------------
-num_lines = sum(1 for line in open(folder))
+num_lines = sum(1 for line in open(folder,encoding="utf-8_sig"))
 left_count=0
 right_count=0
 kuuhaku=0
@@ -76,7 +76,7 @@ kashi_line=[]
 start_time=[]
 end_time=[]
 
-with open(folder,"r") as f:
+with open(folder,"r",encoding="utf-8_sig") as f:
     for j in range(num_lines-1):
         s=f.readline()
         
