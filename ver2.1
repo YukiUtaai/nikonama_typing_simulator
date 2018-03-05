@@ -65,7 +65,13 @@ folder=f_kouho[9]
 
 
 #lrcファイル読み込み-------------------------------------------------------------------
-num_lines = sum(1 for line in open(folder,encoding="utf-8_sig"))
+
+try:
+    num_lines = sum(1 for line in open(folder,encoding="utf-8_sig"))
+except:
+    num_lines = sum(1 for line in open(folder))
+
+
 left_count=0
 right_count=0
 kuuhaku=0
@@ -76,7 +82,8 @@ kashi_line=[]
 start_time=[]
 end_time=[]
 
-with open(folder,"r",encoding="utf-8_sig") as f:
+try:
+  with open(folder,"r",encoding="utf-8_sig") as f:
     for j in range(num_lines-1):
         s=f.readline()
         
@@ -98,7 +105,33 @@ with open(folder,"r",encoding="utf-8_sig") as f:
                     
             kashi_line.append(ss)
             start_time.append(time[0:8])
-num_lines-=kuuhaku
+    num_lines-=kuuhaku
+
+except:
+  with open(folder,"r") as f:
+    for j in range(num_lines-1):
+        s=f.readline()
+        
+        if s=="\n":
+            kuuhaku+=1
+        else:
+            ss=""
+            time=""
+            for i in range(len(s)):
+                if s[i]=="[":
+                    left_count+=1
+                elif s[i]=="]":
+                    right_count+=1
+                else:
+                    if left_count==right_count and s[i] not in kigou and s[i]!="\n":
+                        ss+=s[i]
+                    elif left_count>right_count:
+                        time+=s[i]
+                    
+            kashi_line.append(ss)
+            start_time.append(time[0:8])
+
+    num_lines-=kuuhaku
 
 #-----------------------------------------------------------------------------------------
 
