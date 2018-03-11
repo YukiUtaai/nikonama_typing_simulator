@@ -1,0 +1,17 @@
+つかいかた
+https://github.com/YukiUtaai/nikonama_typing_simulator
+・ver3.0をメモ帳とかにコピペして適当な名前で拡張子.pyにして保存（saiten.py とか）
+・waku.pngをプログラムと同じフォルダに保存
+
+
+・Anacondaをインストール
+https://qiita.com/t2y/items/2a3eb58103e85d8064b6
+
+・ダブルクリックで.pyを実行できるようにする
+http://pineplanter.moo.jp/non-it-salaryman/2018/01/01/pyqt-dbclick-start/
+
+・ダブルクリックして開くボタン→難易度を知りたいlrcファイルを選択
+
+
+10段階の難易度評価の実装はまた今度
+タイムタグをつけないで歌詞が書いてある行がある場合は正しく実行されません
