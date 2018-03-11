@@ -1,6 +1,8 @@
 つかいかた
 https://github.com/YukiUtaai/nikonama_typing_simulator
 ・ver3.0をメモ帳とかにコピペして適当な名前で拡張子.pyにして保存（saiten.py とか）
+　メモ帳で保存する場合は、名前を付けて保存を選択したあと、右下の文字コード選択でUTF-8にしてください
+
 ・waku.pngをプログラムと同じフォルダに保存
 
 
