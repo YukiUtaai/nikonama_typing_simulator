@@ -1,0 +1,257 @@
+# -*- coding: utf-8 -*-
+import math
+import tkinter, tkinter.filedialog, tkinter.messagebox
+import os
+
+#各パラメータ-------------------------------------------------------------------------
+
+#プレイヤーと打鍵速度系　7人までなら増やせます
+yarikomi_factor=2 #0~10 よーじょさんのやり込み度
+player=[]
+player.append(["しろ", 3.9]) #ひらがな/秒のイメージ
+player.append(["よーじょ", 4.3+yarikomi_factor*0.25])
+player.append(["セレナーデ☆游騎", 5.25])
+player.append(["ワツキー", 5.5])
+player.append(["寝具", 5])
+player.append(["名無しさん", 1])
+
+#補正文字数系
+state_factor=[4, 3, 1] #日本語⇔英語, カタカナ⇔漢字, ひらがな⇔カタカナ
+kashi_hijuu=[1, 1.2, 0.9, 1.5, 3] #ひらがな、カタカナ、英語、数字、漢字
+renzoku_kanji_factor=1.1 #連続漢字補正
+
+#速度計算系
+time_factor=1.08 #加速係数
+
+#--------------------------------------------------------------------------------------
+
+#lrcファイル読み込み＆時間計算----------------------------------------------------------
+
+def r_lrc():
+    global kyoku_rev
+    kyoku=str(folder.split("/")[-1])
+    kyoku_rev=kyoku.replace(".lrc","")
+
+    code=["utf-8_sig","cp932"]
+    
+    global num_lines
+    
+    try:
+        num_lines = sum(1 for line in open(folder,encoding="utf-8_sig"))
+        encode=code[0]
+    except:
+        num_lines = sum(1 for line in open(folder,encoding="cp932"))
+        encode=code[1]
+    
+    left_count=0
+    right_count=0
+    kuuhaku=0
+    kigou=["「","」","！","？","/","、","。","～","?","!","♪","☆"," ","　","%","％","・","…","‥"]
+
+    global kashi_line
+    kashi_line=[]
+    start_time=[]
+
+    with open(folder,"r",encoding=encode) as f:
+        for j in range(num_lines-1):
+            s=f.readline()
+        
+            if s=="\n":
+                kuuhaku+=1
+            else:
+                ss=""
+                time=""
+                for i in range(len(s)):
+                    if s[i]=="[":
+                        left_count+=1
+                    elif s[i]=="]":
+                        right_count+=1
+                    else:
+                        if left_count==right_count and s[i] not in kigou and s[i]!="\n":
+                            ss+=s[i]
+                        elif left_count>right_count:
+                            time+=s[i]
+                    
+                kashi_line.append(ss)
+                start_time.append(time[0:8])
+        num_lines-=kuuhaku
+
+    global s_time
+    s_time=[]
+    l=[0,1,3,4,6,7]
+    t_f=[600,60,10,1,0.1,0.01]
+    for j in range(num_lines-1):
+        sss=0
+        for k in range(len(l)):
+            sss+=int(start_time[j][l[k]])*t_f[k]
+        s_time.append(round(sss,3))
+
+    s_time.append(s_time[num_lines-2]+20)
+
+#-----------------------------------------------------------------------------------------
+
+#補正文字数測定---------------------------------------------------------------------------
+
+def hosei():
+
+    #https://qiita.com/okkn/items/3aef4458ed2269a59d63
+    state=0 #１：ひらがな　２：カタカナ　３：英語　４：漢字
+
+    alphabet=[chr(i) for i in range(97, 97+26)]
+    ALPHABET=[chr(i) for i in range(65, 65+26)]
+    alphabet2=[chr(i) for i in range(65345, 65345+26)]
+    ALPHABET2=[chr(i) for i in range(65313, 65313+26)]
+    hiragana=[chr(i) for i in range(12353, 12353+83)]
+    katakana=[chr(i) for i in range(12449, 12449+83+1)]
+    hankaku_kana=[chr(i) for i in range(65393, 65393+47)]
+    katakana.append("ー")
+    suuji=[chr(i) for i in range(48, 58)]
+    suuji2=[chr(i) for i in range(65296, 65306)]
+    global type_word_rev
+    type_word_rev=[]
+    for i in range(num_lines-1):
+        kashi_hosei=0
+        kashi_hijuu[4]=3
+        for j in range(len(kashi_line[i])):
+    
+            if str(kashi_line[i])[j] in hiragana:
+                kashi_hijuu[4]=3
+                kashi_hosei+=kashi_hijuu[0]
+                if state==3:
+                    kashi_hosei+=state_factor[0]
+                elif state==2:
+                    kashi_hosei+=state_factor[2]
+                state=1
+            
+            elif str(kashi_line[i])[j] in katakana or str(kashi_line[i])[j] in hankaku_kana:
+                kashi_hijuu[4]=3
+                kashi_hosei+=kashi_hijuu[1]
+                if state==3:
+                    kashi_hosei+=state_factor[0]
+                elif state==4:
+                    kashi_hosei+=state_factor[1]
+                state=2
+            
+            elif str(kashi_line[i])[j] in alphabet or str(kashi_line[i])[j] in ALPHABET or str(kashi_line[i])[j] in alphabet2 or str(kashi_line[i])[j] in ALPHABET2:
+                kashi_hijuu[4]=3
+                kashi_hosei+=kashi_hijuu[2]
+                if state!=3:
+                    kashi_hosei+=state_factor[2]
+                state=3
+            
+            elif str(kashi_line[i])[j] in suuji or str(kashi_line[i])[j] in suuji2:
+                kashi_hijuu[4]=3
+                kashi_hosei+=kashi_hijuu[3]
+            
+            else:
+                kashi_hosei+=3+kashi_hijuu[4]-3 #漢字（登録できてない記号も含まれちゃうけど…）
+                kashi_hijuu[4]=kashi_hijuu[4]**renzoku_kanji_factor
+                if state==3:
+                    kashi_hosei+=state_factor[0]
+                elif state==2:
+                    kashi_hosei+=state_factor[1]
+                state=4
+            
+        type_word_rev.append(kashi_hosei)
+        print(kashi_line[i])    
+        print(kashi_hosei,len(kashi_line[i]))
+
+#    sum_kashi=sum(type_word_rev)
+    print(sum(type_word_rev),"\n")
+    return sum(type_word_rev)
+    
+#-----------------------------------------------------------------------------------------
+
+#点数シミュレーション---------------------------------------------------------------------
+
+def typing_simulation(type_speed):
+
+    sum_kashi=hosei()
+
+    stack=0
+    stack_rev=[0,0,0]
+
+    for i in range(0,num_lines-1):
+        task_word=type_word_rev[i]
+
+        task_time=s_time[i+1]-s_time[i]
+        type_word=(task_time**time_factor)*type_speed
+        
+        if stack_rev[0]>0:
+            type_word, stack_rev[0]=max(0, type_word-stack_rev[0]), max(0, stack_rev[0]-type_word)
+            if stack_rev[0]>0:
+                stack+=stack_rev[0]
+
+        if stack_rev[1]>0:
+            type_word, stack_rev[1]=max(0, type_word-stack_rev[1]), max(0, stack_rev[1]-type_word)
+            if stack_rev[1]>0:
+                stack_rev[0]=stack_rev[1]
+                      
+        stack_rev[2]=max(0, task_word-type_word)
+        if stack_rev[2]>0:
+            stack_rev[1]=stack_rev[2]
+
+    return(round(1000-(1000*stack/sum_kashi)))
+
+#各プレイヤー点数処理＆点数書き込み---------------------------------------------------------
+
+def score():
+
+    print(kyoku_rev)
+    namae=[]
+    for i in range(len(player)):
+        namae.append([player[i][0],typing_simulation(player[i][1])])
+
+    namae.sort(key=lambda x:x[1], reverse=True)
+    rank=[str(i+1) for i in range(len(player))]
+    for i in range(len(player)-1):
+        if namae[i][1]==namae[i+1][1]:
+            rank[i+1]=rank[i]
+
+    print(namae)
+
+    for i in range(len(player)):
+        display_[i]["text"] = rank[i]+"位 "+str(namae[i][1])+"点 "+namae[i][0]
+    kyoku_["text"] =kyoku_rev
+    
+#-----------------------------------------------------------------------------------------
+
+# ボタン押した時の動作-------------------------------------------------------------------
+def ask_click():
+
+    fTyp = [("","*.lrc")]
+    iDir = os.path.abspath(os.path.dirname(__file__))
+    global folder
+    folder = tkinter.filedialog.askopenfilename(filetypes = fTyp,initialdir = iDir)
+    r_lrc()
+    score()
+
+
+# ウィンドウ作成、ファイル選択---------------------------------------------------------
+
+root = tkinter.Tk()
+root.title("ニコ生タイピング点数シミュレータ Ver3.0")
+root.minsize(640, 480)
+root.option_add("*font", ["MS Pゴシック", 14])
+
+# 画像表示
+pimg = tkinter.PhotoImage(file="waku.png")
+canvas = tkinter.Canvas(bg="black", width=640, height=480)
+canvas.place(x=0, y=0)
+canvas.create_image(320, 240, image=pimg)
+
+# 点数を書き込むためのテキスト位置
+display_=[0 for i in range(len(player))]
+for i in range(len(player)):
+    display_[i] = tkinter.Label(text="　　　　　　",  fg="white", bg="dimgrey")
+    display_[i].place(x=10, y=255+30*i)
+kyoku_ = tkinter.Label(text="　　　　　　", fg="dimgrey", bg="white")
+kyoku_.place(x=10, y=20)
+
+# ボタン設置
+askbutton = tkinter.Button(text="開く")
+askbutton.place(x=580, y=440)
+askbutton["command"] = ask_click
+
+root.mainloop()
+
